@@ -1,0 +1,58 @@
+# Запуск из этого каталога: docker compose up -d
+# Контекст сборки — родительский каталог (рядом должен лежать backend_core).
+# В отдельном репозитории: backend_core как submodule в ./backend_core или зависимость из индекса — тогда context: . и правки Dockerfile.
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    env_file:
+      - .env
+    ports:
+      - "${POSTGRES_PUBLISH_PORT:-5432}:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $$POSTGRES_USER -d $$POSTGRES_DB"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+
+  redis:
+    image: redis:7-alpine
+    env_file:
+      - .env
+    command: >
+      sh -c 'if [ -n "$$REDIS_PASSWORD" ]; then exec redis-server --requirepass "$$REDIS_PASSWORD"; else exec redis-server; fi'
+    ports:
+      - "${REDIS_PUBLISH_PORT:-6379}:${REDIS_PORT:-6379}"
+    healthcheck:
+      test:
+        [
+          "CMD-SHELL",
+          'if [ -n "$$REDIS_PASSWORD" ]; then redis-cli -a "$$REDIS_PASSWORD" ping; else redis-cli ping; fi',
+        ]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+
+  auth:
+    build:
+      context: ..
+      dockerfile: auth_service/Dockerfile
+    ports:
+      - "8000:8000"
+    env_file:
+      - .env
+    environment:
+      DATABASE_URL: postgresql+asyncpg://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:${POSTGRES_PORT:-5432}/${POSTGRES_DB}
+      REDIS_URL: redis://redis:${REDIS_PORT:-6379}/0
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 15s
