@@ -21,14 +21,18 @@
 
 import uuid
 
-from orm import Base
-from sqlalchemy import String, Uuid
+from orm import BaseModel
+from sqlalchemy import String, Uuid, func
 from sqlalchemy.orm import Mapped, mapped_column
 
 
-class User(Base):
+class UserModel(BaseModel):
     __tablename__ = "users"
 
-    id: Mapped[uuid.UUID] = mapped_column(Uuid(as_uuid=True), primary_key=True, default=uuid.uuid4)
-    name: Mapped[str] = mapped_column(String(255), unique=True, index=True, nullable=False)
+    id: Mapped[uuid.UUID] = mapped_column(
+        Uuid(as_uuid=True), primary_key=True, server_default=func.uuid_generate_v4()
+    )
+    name: Mapped[str] = mapped_column(
+        String(255), unique=True, index=True, nullable=False
+    )
     password_hash: Mapped[str] = mapped_column(String(255), nullable=False)

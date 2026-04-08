@@ -1,6 +1,5 @@
-from orm import Base
+from orm import BaseModel
 
-from app.db.models import User
-from app.db.session import engine, get_session, init_db
+from app.db.session import engine, get_db_session, init_db
 
-__all__ = ["Base", "User", "engine", "get_session", "init_db"]
+__all__ = ["BaseModel", "engine", "get_db_session", "init_db"]

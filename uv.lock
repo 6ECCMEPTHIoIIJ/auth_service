@@ -144,8 +144,12 @@ requires-dist = [
 name = "backend-core"
 version = "0.1.0"
 source = { editable = "../backend_core" }
+dependencies = [
+    { name = "sqlalchemy" },
+]
 
 [package.metadata]
+requires-dist = [{ name = "sqlalchemy", specifier = ">=2.0.36" }]
 
 [package.metadata.requires-dev]
 dev = [{ name = "ruff", specifier = ">=0.15.9" }]
